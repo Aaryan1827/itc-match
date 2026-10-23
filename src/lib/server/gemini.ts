@@ -1,12 +1,12 @@
 import { APICallError, generateText, Output, type ModelMessage } from "ai";
-import type { z } from "zod";
+import { z } from "zod";
 
 import { explanationSchema, modelInvoiceSchema } from "../gst/schemas";
-import type { InvoiceResult, Language } from "../gst/types";
+import type { ExtractedInvoice, FollowUp, InvoiceResult, Language } from "../gst/types";
 import { createLovableAiGatewayProvider, LOVABLE_GATEWAY_BASE_URL } from "./gateway";
 import { EXTRACTION_SYSTEM, explainSystem } from "./prompts";
 
-const TIMEOUT_MS = 45_000;
+const TIMEOUT_MS = 60_000;
 
 export interface GeminiDeps {
   fetch: typeof fetch;
@@ -52,6 +52,57 @@ function toGatewayError(error: unknown): GatewayError | null {
   return new GatewayError(status, message);
 }
 
+/**
+ * Loose output schemas for the model: no bounds or patterns (constrained decoding
+ * rejects large ranges). The strict domain schemas re-validate everything in code.
+ */
+const looseInvoiceSchema = z.object({
+  supplierName: z.string(),
+  supplierGstin: z.string(),
+  buyerGstin: z.string(),
+  invoiceNumber: z.string(),
+  invoiceDate: z.string(),
+  lines: z.array(
+    z.object({
+      description: z.string(),
+      hsn: z.string(),
+      quantity: z.number(),
+      unitRate: z.number(),
+      amount: z.number(),
+    }),
+  ),
+  taxableValue: z.number(),
+  taxRatePercent: z.number().nullable(),
+  igst: z.number(),
+  cgst: z.number(),
+  sgst: z.number(),
+  total: z.number(),
+  confidence: z.number(),
+});
+
+const looseExplanationSchema = z.object({
+  summary: z.string(),
+  followUps: z.array(z.object({ invoiceNumber: z.string(), message: z.string() })),
+});
+
+const nonNegative = (value: number): number => (Number.isFinite(value) ? Math.max(0, value) : 0);
+
+/** Clamp model output into the range the strict schemas accept, then validate strictly. */
+function toStrictInvoice(raw: z.infer<typeof looseInvoiceSchema>): ExtractedInvoice {
+  const candidate = {
+    ...raw,
+    lines: raw.lines.map((line) => ({ ...line, quantity: nonNegative(line.quantity) })),
+    taxableValue: nonNegative(raw.taxableValue),
+    taxRatePercent: raw.taxRatePercent === null ? null : nonNegative(raw.taxRatePercent),
+    igst: nonNegative(raw.igst),
+    cgst: nonNegative(raw.cgst),
+    sgst: nonNegative(raw.sgst),
+    total: nonNegative(raw.total),
+    confidence: raw.confidence > 1 ? raw.confidence / 100 : nonNegative(raw.confidence),
+  };
+  return modelInvoiceSchema.parse(candidate);
+}
+
 interface CallArgs<T> {
   apiKey: string;
   model: string;
@@ -65,6 +116,7 @@ interface CallArgs<T> {
 async function callModel<T>({ apiKey, model, system, messages, schema, deps }: CallArgs<T>): Promise<T> {
   const provider = createLovableAiGatewayProvider(apiKey, undefined, {
     baseURL: LOVABLE_GATEWAY_BASE_URL,
+    structuredOutputs: true,
     fetch: deps.fetch,
   });
   try {
@@ -86,11 +138,11 @@ async function callModel<T>({ apiKey, model, system, messages, schema, deps }: C
 }
 
 /** Vision extraction for one invoice. Output is schema-validated before it is trusted. */
-export async function extractInvoice(creds: ModelCreds, mimeType: string, base64: string) {
-  return callModel({
+export async function extractInvoice(creds: ModelCreds, mimeType: string, base64: string): Promise<ExtractedInvoice> {
+  const raw = await callModel({
     ...creds,
     system: EXTRACTION_SYSTEM,
-    schema: modelInvoiceSchema,
+    schema: looseInvoiceSchema,
     messages: [
       {
         role: "user",
@@ -101,6 +153,7 @@ export async function extractInvoice(creds: ModelCreds, mimeType: string, base64
       },
     ],
   });
+  return toStrictInvoice(raw);
 }
 
 /** Plain-language summary and supplier messages, written from already-computed findings. */
@@ -108,7 +161,7 @@ export async function explainFindings(
   creds: ModelCreds,
   lang: Language,
   findings: { itcAtRiskTotal: number; invoices: InvoiceResult[] },
-) {
+): Promise<{ summary: string; followUps: FollowUp[] }> {
   const payload = {
     itcAtRiskTotalInr: findings.itcAtRiskTotal,
     invoices: findings.invoices.map((r) => ({
@@ -119,10 +172,10 @@ export async function explainFindings(
       problems: r.issues.map((i) => i.message),
     })),
   };
-  return callModel({
+  const raw = await callModel({
     ...creds,
     system: explainSystem(lang),
-    schema: explanationSchema,
+    schema: looseExplanationSchema,
     messages: [
       {
         role: "user",
@@ -135,4 +188,5 @@ export async function explainFindings(
       },
     ],
   });
+  return explanationSchema.parse(raw);
 }
