@@ -4,12 +4,12 @@ import { z } from "zod";
  * Runtime validation for everything that crosses a trust boundary:
  * model output from Gemini and the parsed GSTR-2B file. Never use unvalidated model output.
  */
-const money = z.number().finite().min(0).max(1_000_000_000);
+const money = z.number().min(0).max(1_000_000_000);
 
 export const invoiceLineSchema = z.object({
   description: z.string().max(300),
   hsn: z.string().max(12),
-  quantity: z.number().finite().min(0),
+  quantity: z.number().min(0),
   unitRate: money,
   amount: money,
 });
@@ -23,7 +23,7 @@ export const extractedInvoiceSchema = z.object({
   invoiceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD"),
   lines: z.array(invoiceLineSchema).max(200),
   taxableValue: money,
-  taxRatePercent: z.number().finite().min(0).max(100).nullable(),
+  taxRatePercent: z.number().min(0).max(100).nullable(),
   igst: money,
   cgst: money,
   sgst: money,
@@ -45,3 +45,16 @@ export const gstr2bRowSchema = z.object({
 
 export const extractedInvoiceListSchema = z.array(extractedInvoiceSchema).max(10);
 export const gstr2bListSchema = z.array(gstr2bRowSchema).max(5000);
+
+/** What Gemini returns per invoice. The file name is attached server-side, never taken from the model. */
+export const modelInvoiceSchema = extractedInvoiceSchema.omit({ fileName: true });
+
+export const followUpSchema = z.object({
+  invoiceNumber: z.string().max(40),
+  message: z.string().max(1200),
+});
+
+export const explanationSchema = z.object({
+  summary: z.string().max(1500),
+  followUps: z.array(followUpSchema).max(20),
+});

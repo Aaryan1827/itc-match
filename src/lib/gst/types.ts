@@ -89,3 +89,21 @@ export interface RateConfig {
 }
 
 export type StateCodes = Record<string, string>;
+
+export type Language = "en" | "hi" | "mr";
+
+export interface FollowUp {
+  invoiceNumber: string;
+  message: string;
+}
+
+export interface ReconcileResponse {
+  summary: ReconcileSummary;
+  /** Plain-language overview written by Gemini (or a template if Gemini is unavailable). */
+  narrative: string;
+  followUps: FollowUp[];
+  /** Files that could not be read; they are excluded from the reconciliation. */
+  failed: { fileName: string; reason: string }[];
+  timingsMs: { extract: number; reconcile: number; explain: number; total: number };
+  model: string;
+}
