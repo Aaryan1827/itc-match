@@ -18,22 +18,27 @@ const truth = JSON.parse(read("../samples/ground-truth.json")) as {
 };
 
 const PDF_HEADER = "%PDF-1.4\n";
-const env = { LOVABLE_API_KEY: "test-key", GEMINI_MODEL: "test-model", RATE_LIMIT_PER_MIN: "100" };
+const env = { GEMINI_API_KEY: "test-key", GEMINI_MODEL: "test-model", RATE_LIMIT_PER_MIN: "100" };
 
 /**
- * Mock AI gateway (OpenAI-compatible chat completions): the fake PDF body carries
+ * Mock AI (Google Gemini generateContent): the fake PDF body carries
  * an invoice id, so the mock can answer per document.
  */
 function mockGemini(options: { failExplain?: boolean; failId?: string } = {}) {
   return async (_url: string | URL | Request, init?: RequestInit): Promise<Response> => {
     const body = JSON.parse(String(init?.body)) as {
-      messages: { content: unknown }[];
+      contents?: { parts?: { text?: string; inlineData?: { data?: string } }[] }[];
     };
-    const imageUrl = /"file_data"\s*:\s*"data:[^"]*;base64,([^"]+)"/.exec(JSON.stringify(body.messages))?.[1];
+    const parts = body.contents?.[0]?.parts ?? [];
+    const inline = parts.find((p) => p.inlineData)?.inlineData?.data;
     const reply = (payload: unknown): Response =>
-      new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(payload) } }] }));
-    if (imageUrl) {
-      const id = /INV\d\d/.exec(atob(imageUrl))?.[0] ?? "";
+      new Response(
+        JSON.stringify({
+          candidates: [{ content: { parts: [{ text: JSON.stringify(payload) }] } }],
+        }),
+      );
+    if (inline) {
+      const id = /INV\d\d/.exec(atob(inline))?.[0] ?? "";
       if (id === options.failId) return new Response("boom", { status: 500 });
       const { fileName: _ignored, ...rest } = fixtures.find((f) => f.fileName === `${id}.pdf`) as ExtractedInvoice;
       return reply(rest);
@@ -205,12 +210,12 @@ describe("POST /api/reconcile (end to end, Gemini mocked)", () => {
 });
 
 describe("readConfig", () => {
-  it("picks up the API key from LOVABLE_API_KEY", () => {
-    const config = readConfig({ LOVABLE_API_KEY: "sk_test-key" });
-    assert.equal(config.apiKey, "sk_test-key");
+  it("picks up the API key from GEMINI_API_KEY", () => {
+    const config = readConfig({ GEMINI_API_KEY: "test-key" });
+    assert.equal(config.apiKey, "test-key");
   });
 
-  it("returns apiKey undefined (and the handler returns 503) when neither key is set", () => {
+  it("returns apiKey undefined (and the handler returns 503) when key is not set", () => {
     const config = readConfig({});
     assert.equal(config.apiKey, undefined);
   });

@@ -1,12 +1,13 @@
-import { APICallError, generateText, Output, type ModelMessage } from "ai";
 import { z } from "zod";
 
 import { explanationSchema, modelInvoiceSchema } from "../gst/schemas";
 import type { FollowUp, InvoiceResult, Language } from "../gst/types";
-import { createLovableAiGatewayProvider, LOVABLE_GATEWAY_BASE_URL } from "./gateway";
 import { EXTRACTION_SYSTEM, explainSystem } from "./prompts";
 
-const TIMEOUT_MS = 60_000;
+/** Maximum time to wait for a single model call before aborting. */
+const TIMEOUT_MS = 45_000;
+
+const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 export interface GeminiDeps {
   fetch: typeof fetch;
@@ -30,27 +31,11 @@ export class GatewayError extends Error {
 
 const SAFE_STATUS_MESSAGES: Record<number, string> = {
   401: "The AI service is not configured correctly.",
+  403: "The AI service is not configured correctly.",
   404: "The AI model is currently unavailable.",
+  429: "Too many requests to the AI service. Please wait a moment and try again.",
+  402: "The AI service is temporarily unavailable.",
 };
-
-/** Map account/credit/access failures to a GatewayError; other failures are ordinary errors. */
-function toGatewayError(error: unknown): GatewayError | null {
-  if (!(error instanceof APICallError)) return null;
-  const status = error.statusCode ?? 0;
-  if (status !== 401 && status !== 402 && status !== 403 && status !== 404) return null;
-  let message = SAFE_STATUS_MESSAGES[status] ?? "The AI service is temporarily unavailable.";
-  try {
-    const body = JSON.parse(String(error.responseBody ?? "{}")) as {
-      error?: { message?: string };
-      message?: string;
-    };
-    const detailed = body.error?.message ?? body.message;
-    if (detailed && detailed.length <= 300) message = detailed;
-  } catch {
-    // keep the safe default
-  }
-  return new GatewayError(status, message);
-}
 
 /**
  * Loose output schemas for the model: no bounds or patterns (constrained decoding
@@ -103,38 +88,66 @@ function toStrictInvoice(raw: z.infer<typeof looseInvoiceSchema>): z.infer<typeo
   return modelInvoiceSchema.parse(candidate);
 }
 
+/** A single content part sent to Gemini. */
+type GeminiPart =
+  | { text: string }
+  | { inlineData: { mimeType: string; data: string } };
+
 interface CallArgs<T> {
   apiKey: string;
   model: string;
   system: string;
-  messages: ModelMessage[];
+  parts: GeminiPart[];
   schema: z.ZodType<T>;
   deps: GeminiDeps;
 }
 
-/** One structured-output call through the built-in AI route. Errors carry no request content. */
-async function callModel<T>({ apiKey, model, system, messages, schema, deps }: CallArgs<T>): Promise<T> {
-  const provider = createLovableAiGatewayProvider(apiKey, undefined, {
-    baseURL: LOVABLE_GATEWAY_BASE_URL,
-    structuredOutputs: true,
-    fetch: deps.fetch,
-  });
-  try {
-    const { output } = await generateText({
-      model: provider(model),
-      output: Output.object({ schema }),
-      system,
-      messages,
+/** POST to Gemini generateContent and return the parsed, schema-validated JSON output. */
+async function callModel<T>({ apiKey, model, system, parts, schema, deps }: CallArgs<T>): Promise<T> {
+  const cleanModel = (model || "gemini-2.5-flash").replace(/^models\//, "").replace(/^google\//, "");
+  const url = `${GEMINI_BASE}/${encodeURIComponent(cleanModel)}:generateContent`;
+
+  const body = JSON.stringify({
+    systemInstruction: { parts: [{ text: system }] },
+    contents: [{ role: "user", parts }],
+    generationConfig: {
+      responseMimeType: "application/json",
       temperature: 0,
-      maxRetries: 0,
-      abortSignal: AbortSignal.timeout(TIMEOUT_MS),
-    });
-    return output;
-  } catch (error) {
-    const gatewayError = toGatewayError(error);
-    if (gatewayError) throw gatewayError;
-    throw error;
+    },
+  });
+
+  const res = await deps.fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": apiKey,
+    },
+    body,
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+
+  if (!res.ok) {
+    const status = res.status;
+    let message = SAFE_STATUS_MESSAGES[status] ?? "The AI service is temporarily unavailable.";
+    try {
+      const errBody = (await res.json()) as { error?: { message?: string }; message?: string };
+      const detailed = errBody.error?.message ?? errBody.message;
+      if (detailed && detailed.length <= 300) message = detailed;
+    } catch {
+      // keep safe default
+    }
+    if (status === 401 || status === 402 || status === 403 || status === 404 || status === 429) {
+      throw new GatewayError(status, message);
+    }
+    throw new Error(`Gemini error ${status}`);
   }
+
+  const json = (await res.json()) as {
+    candidates?: { content?: { parts?: { text?: string }[] } }[];
+  };
+  const rawText = json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+  const stripped = rawText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+  return schema.parse(JSON.parse(stripped));
 }
 
 /** Vision extraction for one invoice. Output is schema-validated before it is trusted. */
@@ -147,14 +160,9 @@ export async function extractInvoice(
     ...creds,
     system: EXTRACTION_SYSTEM,
     schema: looseInvoiceSchema,
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "file", data: base64, mediaType: mimeType },
-          { type: "text", text: "Extract the invoice fields as JSON." },
-        ],
-      },
+    parts: [
+      { inlineData: { mimeType, data: base64 } },
+      { text: "Extract the invoice fields as JSON." },
     ],
   });
   return toStrictInvoice(raw);
@@ -180,15 +188,9 @@ export async function explainFindings(
     ...creds,
     system: explainSystem(lang),
     schema: looseExplanationSchema,
-    messages: [
+    parts: [
       {
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: `Findings (data):\n${JSON.stringify(payload, null, 2)}\n\nRespond with the JSON object described in your instructions.`,
-          },
-        ],
+        text: `Findings (data):\n${JSON.stringify(payload, null, 2)}\n\nRespond with the JSON object described in your instructions.`,
       },
     ],
   });
