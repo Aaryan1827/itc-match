@@ -1,11 +1,14 @@
-import { Clock, Lock } from "lucide-react";
+import { Clock, Cpu, Lock } from "lucide-react";
 
 interface PerformanceStripProps {
-  secondsPerInvoice: number;
+  timingsMs: { extract: number; reconcile: number; explain: number; total: number };
+  model: string;
   invoiceCount: number;
 }
 
-export function PerformanceStrip({ secondsPerInvoice, invoiceCount }: PerformanceStripProps) {
+const seconds = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
+
+export function PerformanceStrip({ timingsMs, model, invoiceCount }: PerformanceStripProps) {
   return (
     <section
       aria-label="Performance and data handling"
@@ -14,9 +17,17 @@ export function PerformanceStrip({ secondsPerInvoice, invoiceCount }: Performanc
       <span className="inline-flex items-center gap-2">
         <Clock aria-hidden className="size-4 text-primary" />
         <span>
-          <strong className="font-semibold text-foreground">{secondsPerInvoice.toFixed(1)} s</strong> per
-          invoice ({invoiceCount} invoices)
+          <strong className="font-semibold text-foreground">{seconds(timingsMs.total)}</strong> total for{" "}
+          {invoiceCount} invoice{invoiceCount === 1 ? "" : "s"}
+          <span className="block text-xs">
+            Extracting {seconds(timingsMs.extract)} · Matching {seconds(timingsMs.reconcile)} · Explaining{" "}
+            {seconds(timingsMs.explain)}
+          </span>
         </span>
+      </span>
+      <span className="inline-flex items-center gap-2">
+        <Cpu aria-hidden className="size-4 text-primary" />
+        Model: {model}
       </span>
       <span className="inline-flex items-center gap-2">
         <Lock aria-hidden className="size-4 text-primary" />

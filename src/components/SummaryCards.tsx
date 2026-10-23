@@ -1,29 +1,27 @@
-import { Landmark, TrendingDown, SearchCheck } from "lucide-react";
-import { inr, type Invoice } from "@/data/demoData";
+import { Landmark, SearchCheck, TrendingDown } from "lucide-react";
+import { inr } from "@/lib/format";
+import type { ReconcileSummary } from "@/lib/gst/types";
 
 interface SummaryCardsProps {
-  invoices: Invoice[];
+  summary: ReconcileSummary;
 }
 
-export function SummaryCards({ invoices }: SummaryCardsProps) {
-  const itcAtRisk = invoices
-    .filter((invoice) => invoice.status === "ITC at risk")
-    .reduce((total, invoice) => total + invoice.taxAmount, 0);
-  const issuesFound = invoices.reduce((total, invoice) => total + invoice.checks.length, 0);
+export function SummaryCards({ summary }: SummaryCardsProps) {
+  const issuesFound = summary.results.reduce((total, result) => total + result.issues.length, 0);
 
   const cards = [
     {
       id: "summary-risk",
       icon: TrendingDown,
       label: "ITC at risk (₹)",
-      value: inr.format(itcAtRisk),
+      value: inr.format(summary.itcAtRiskTotal),
       caption: "Input tax credit that cannot be claimed this period",
     },
     {
       id: "summary-checked",
       icon: Landmark,
       label: "Invoices checked",
-      value: String(invoices.length),
+      value: String(summary.results.length),
       caption: "Purchase invoices matched against GSTR-2B",
     },
     {
