@@ -4,7 +4,7 @@ import { gstr2bListSchema } from "../gst/schemas";
 import type { ExtractedInvoice, FollowUp, Language, ReconcileResponse } from "../gst/types";
 import { readConfig } from "./config";
 import { gstr2bRowsFromCsv } from "./csv";
-import { explainFindings, extractInvoice, type GeminiDeps } from "./gemini";
+import { explainFindings, extractInvoice, GatewayError, type GeminiDeps } from "./gemini";
 import { clientIp, FixedWindowLimiter } from "./rate-limit";
 import { checkInvoiceFile, safeFileName, toBase64 } from "./upload";
 
@@ -61,7 +61,7 @@ export async function handleReconcile(
   const started = now();
   const config = readConfig(env);
 
-  if (!config.apiKey) return fail(500, "The service is not configured.");
+  if (!config.apiKey) return fail(503, "The service is not configured. Please try again later.");
 
   if (limiter?.limit !== config.rateLimitPerMin) {
     limiter = { limit: config.rateLimitPerMin, instance: new FixedWindowLimiter(config.rateLimitPerMin, 60_000) };
@@ -97,8 +97,9 @@ export async function handleReconcile(
   const lang = parseLanguage(form.get("lang"));
   const creds = { apiKey: config.apiKey, model: config.model, deps };
   const failed: ReconcileResponse["failed"] = [];
+  let gatewayError: GatewayError | null = null;
 
-  // 1. Extraction (Gemini vision), a few files at a time
+  // 1. Extraction (vision model), a few files at a time
   const extractStart = now();
   const extracted = await mapPool(invoiceFiles, CONCURRENCY, async (file): Promise<ExtractedInvoice | null> => {
     const fileName = safeFileName(file.name);
@@ -117,6 +118,11 @@ export async function handleReconcile(
         buyerGstin: data.buyerGstin.trim().toUpperCase(),
       };
     } catch (error) {
+      if (error instanceof GatewayError) {
+        // Account, credit or access problem: stop the whole batch with the provider's safe message.
+        gatewayError = error;
+        return null;
+      }
       console.error("extraction failed", error instanceof Error ? error.message : "unknown");
       failed.push({ fileName, reason: EXTRACT_ERROR });
       return null;
@@ -124,6 +130,7 @@ export async function handleReconcile(
   });
   const invoices = extracted.filter((inv): inv is ExtractedInvoice => inv !== null);
   const extractMs = now() - extractStart;
+  if (gatewayError) return fail(gatewayError.status, gatewayError.message);
   if (invoices.length === 0) return json({ error: "No invoice could be read.", failed }, 422);
 
   // 2. Reconciliation: pure code, no model involved
