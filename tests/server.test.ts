@@ -28,7 +28,9 @@ function mockGemini(options: { failExplain?: boolean; failId?: string } = {}) {
     const body = JSON.parse(String(init?.body)) as {
       messages: { content: unknown }[];
     };
-    const imageUrl = /"file_data"\s*:\s*"data:[^"]*;base64,([^"]+)"/.exec(JSON.stringify(body.messages))?.[1];
+    const raw = JSON.stringify(body.messages);
+    const imageUrl = /"file_data"\s*:\s*"data:[^"]*;base64,([^"]+)"/.exec(raw)?.[1];
+    if (process.env.DBG) console.log("DBG capture:", imageUrl?.slice(0, 24), JSON.stringify(raw).slice(0, 200));
     const reply = (payload: unknown): Response =>
       new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(payload) } }] }));
     if (imageUrl) {
