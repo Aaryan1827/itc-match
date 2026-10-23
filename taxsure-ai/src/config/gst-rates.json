@@ -1,0 +1,16 @@
+{
+  "_note": "VERIFY against the latest CBIC / GST Council notifications before relying on this. Rates restructured under GST 2.0 (56th Council meeting, effective 22 Sep 2025).",
+  "periods": [
+    {
+      "from": "2017-07-01",
+      "to": "2025-09-21",
+      "allowedRates": [0, 0.25, 3, 5, 12, 18, 28]
+    },
+    {
+      "from": "2025-09-22",
+      "to": null,
+      "allowedRates": [0, 0.25, 3, 5, 18, 40]
+    }
+  ],
+  "roundingToleranceInr": 1
+}

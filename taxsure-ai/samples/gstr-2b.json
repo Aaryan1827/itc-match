@@ -1,0 +1,90 @@
+[
+  {
+    "supplierGstin": "27AAKPK4821M1ZD",
+    "supplierName": "Kothrud Packaging Works",
+    "invoiceNumber": "KPW/26/0412",
+    "invoiceDate": "2026-09-03",
+    "taxableValue": 17000.0,
+    "igst": 0,
+    "cgst": 1530.0,
+    "sgst": 1530.0,
+    "invoiceValue": 20060.0
+  },
+  {
+    "supplierGstin": "24AABCS7743R1ZQ",
+    "supplierName": "Surat Textile Mills Ltd",
+    "invoiceNumber": "STM/2627/1180",
+    "invoiceDate": "2026-09-05",
+    "taxableValue": 115200.0,
+    "igst": 5760.0,
+    "cgst": 0,
+    "sgst": 0,
+    "invoiceValue": 120960.0
+  },
+  {
+    "supplierGstin": "29AAACP3391D1ZH",
+    "supplierName": "Peenya Precision Tools",
+    "invoiceNumber": "PPT-0932",
+    "invoiceDate": "2026-09-07",
+    "taxableValue": 71500.0,
+    "igst": 12870.0,
+    "cgst": 0,
+    "sgst": 0,
+    "invoiceValue": 84370.0
+  },
+  {
+    "supplierGstin": "27AAHFN9027B1ZD",
+    "supplierName": "Nashik Agro Supplies",
+    "invoiceNumber": "NAS/0457",
+    "invoiceDate": "2026-09-09",
+    "taxableValue": 39000.0,
+    "igst": 1950.0,
+    "cgst": 0,
+    "sgst": 0,
+    "invoiceValue": 40950.0
+  },
+  {
+    "supplierGstin": "33AAECC5518H1ZW",
+    "supplierName": "Chennai Polymer Industries",
+    "invoiceNumber": "CPI/26-27/2210",
+    "invoiceDate": "2026-09-11",
+    "taxableValue": 94400.0,
+    "igst": 16992.0,
+    "cgst": 0,
+    "sgst": 0,
+    "invoiceValue": 111392.0
+  },
+  {
+    "supplierGstin": "33AAECC5518H1ZW",
+    "supplierName": "Chennai Polymer Industries",
+    "invoiceNumber": "TS-2026-0148",
+    "invoiceDate": "2026-09-16",
+    "taxableValue": 73500.0,
+    "igst": 13230.0,
+    "cgst": 0,
+    "sgst": 0,
+    "invoiceValue": 86730.0
+  },
+  {
+    "supplierGstin": "24AABCS7743R1ZQ",
+    "supplierName": "Surat Textile Mills Ltd",
+    "invoiceNumber": "STM/2627/1203",
+    "invoiceDate": "2026-09-18",
+    "taxableValue": 118800.0,
+    "igst": 14256.0,
+    "cgst": 0,
+    "sgst": 0,
+    "invoiceValue": 133056.0
+  },
+  {
+    "supplierGstin": "33AAECC5518H1ZW",
+    "supplierName": "Chennai Polymer Industries",
+    "invoiceNumber": "CPI/26-27/2299",
+    "invoiceDate": "2026-09-20",
+    "taxableValue": 25000.0,
+    "igst": 4500.0,
+    "cgst": 0,
+    "sgst": 0,
+    "invoiceValue": 29500.0
+  }
+]

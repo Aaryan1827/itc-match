@@ -1,0 +1,249 @@
+[
+  {
+    "fileName": "INV01.pdf",
+    "supplierName": "Kothrud Packaging Works",
+    "supplierGstin": "27AAKPK4821M1ZD",
+    "buyerGstin": "27AAFCS6254K1ZY",
+    "invoiceNumber": "KPW/26/0412",
+    "invoiceDate": "2026-09-03",
+    "lines": [
+      {
+        "description": "Corrugated cartons 5-ply",
+        "hsn": "4819",
+        "quantity": 400,
+        "unitRate": 42.5,
+        "amount": 17000.0
+      }
+    ],
+    "taxableValue": 17000.0,
+    "taxRatePercent": 18,
+    "igst": 0.0,
+    "cgst": 1530.0,
+    "sgst": 1530.0,
+    "total": 20060.0,
+    "confidence": 0.95
+  },
+  {
+    "fileName": "INV02.pdf",
+    "supplierName": "Surat Textile Mills Ltd",
+    "supplierGstin": "24AABCS7743R1ZQ",
+    "buyerGstin": "27AAFCS6254K1ZY",
+    "invoiceNumber": "STM/2627/1180",
+    "invoiceDate": "2026-09-05",
+    "lines": [
+      {
+        "description": "Cotton fabric 40s",
+        "hsn": "5208",
+        "quantity": 1200,
+        "unitRate": 96.0,
+        "amount": 115200.0
+      }
+    ],
+    "taxableValue": 115200.0,
+    "taxRatePercent": 5,
+    "igst": 5760.0,
+    "cgst": 0.0,
+    "sgst": 0.0,
+    "total": 120960.0,
+    "confidence": 0.95
+  },
+  {
+    "fileName": "INV03.pdf",
+    "supplierName": "Peenya Precision Tools",
+    "supplierGstin": "29AAACP3391D1ZH",
+    "buyerGstin": "27AAFCS6254K1ZY",
+    "invoiceNumber": "PPT-0932",
+    "invoiceDate": "2026-09-07",
+    "lines": [
+      {
+        "description": "Carbide cutting inserts",
+        "hsn": "8207",
+        "quantity": 150,
+        "unitRate": 310.0,
+        "amount": 46500.0
+      },
+      {
+        "description": "Tool holders",
+        "hsn": "8207",
+        "quantity": 20,
+        "unitRate": 1250.0,
+        "amount": 25000.0
+      }
+    ],
+    "taxableValue": 71500.0,
+    "taxRatePercent": 18,
+    "igst": 12870.0,
+    "cgst": 0.0,
+    "sgst": 0.0,
+    "total": 84370.0,
+    "confidence": 0.95
+  },
+  {
+    "fileName": "INV04.pdf",
+    "supplierName": "Nashik Agro Supplies",
+    "supplierGstin": "27AAHFN9027B1ZD",
+    "buyerGstin": "27AAFCS6254K1ZY",
+    "invoiceNumber": "NAS/0457",
+    "invoiceDate": "2026-09-09",
+    "lines": [
+      {
+        "description": "Soil conditioner granules",
+        "hsn": "3105",
+        "quantity": 500,
+        "unitRate": 78.0,
+        "amount": 39000.0
+      }
+    ],
+    "taxableValue": 39000.0,
+    "taxRatePercent": 5,
+    "igst": 1950.0,
+    "cgst": 0.0,
+    "sgst": 0.0,
+    "total": 40950.0,
+    "confidence": 0.95
+  },
+  {
+    "fileName": "INV05.pdf",
+    "supplierName": "Chennai Polymer Industries",
+    "supplierGstin": "33AAECC5518H1ZW",
+    "buyerGstin": "27AAFCS6254K1ZY",
+    "invoiceNumber": "CPI/26-27/2210",
+    "invoiceDate": "2026-09-11",
+    "lines": [
+      {
+        "description": "Polymer granules HDPE",
+        "hsn": "3901",
+        "quantity": 800,
+        "unitRate": 118.0,
+        "amount": 94400.0
+      }
+    ],
+    "taxableValue": 94400.0,
+    "taxRatePercent": 18,
+    "igst": 16542.0,
+    "cgst": 0.0,
+    "sgst": 0.0,
+    "total": 111392.0,
+    "confidence": 0.95
+  },
+  {
+    "fileName": "INV06.pdf",
+    "supplierName": "Peenya Precision Tools",
+    "supplierGstin": "29AAACP3391D1ZA",
+    "buyerGstin": "27AAFCS6254K1ZY",
+    "invoiceNumber": "PPT-0951",
+    "invoiceDate": "2026-09-12",
+    "lines": [
+      {
+        "description": "Precision gauges",
+        "hsn": "9031",
+        "quantity": 40,
+        "unitRate": 865.0,
+        "amount": 34600.0
+      }
+    ],
+    "taxableValue": 34600.0,
+    "taxRatePercent": 18,
+    "igst": 6228.0,
+    "cgst": 0.0,
+    "sgst": 0.0,
+    "total": 40828.0,
+    "confidence": 0.95
+  },
+  {
+    "fileName": "INV07.pdf",
+    "supplierName": "Kothrud Packaging Works",
+    "supplierGstin": "27AAKPK4821M1ZD",
+    "buyerGstin": "27AAFCS6254K1ZY",
+    "invoiceNumber": "KPW/26/0433",
+    "invoiceDate": "2026-09-14",
+    "lines": [
+      {
+        "description": "Printed mono cartons",
+        "hsn": "4819",
+        "quantity": 650,
+        "unitRate": 38.0,
+        "amount": 24700.0
+      }
+    ],
+    "taxableValue": 24700.0,
+    "taxRatePercent": 18,
+    "igst": 0.0,
+    "cgst": 2223.0,
+    "sgst": 2223.0,
+    "total": 29146.0,
+    "confidence": 0.95
+  },
+  {
+    "fileName": "INV08.pdf",
+    "supplierName": "Chennai Polymer Industries",
+    "supplierGstin": "33AAECC5518H1ZW",
+    "buyerGstin": "27AAFCS6254K1ZY",
+    "invoiceNumber": "TS/2026/0148",
+    "invoiceDate": "2026-09-16",
+    "lines": [
+      {
+        "description": "Polymer sheet 2mm",
+        "hsn": "3920",
+        "quantity": 300,
+        "unitRate": 245.0,
+        "amount": 73500.0
+      }
+    ],
+    "taxableValue": 73500.0,
+    "taxRatePercent": 18,
+    "igst": 13230.0,
+    "cgst": 0.0,
+    "sgst": 0.0,
+    "total": 86730.0,
+    "confidence": 0.95
+  },
+  {
+    "fileName": "INV09.pdf",
+    "supplierName": "Surat Textile Mills Ltd",
+    "supplierGstin": "24AABCS7743R1ZQ",
+    "buyerGstin": "27AAFCS6254K1ZY",
+    "invoiceNumber": "STM/2627/1203",
+    "invoiceDate": "2026-09-18",
+    "lines": [
+      {
+        "description": "Dyed yarn",
+        "hsn": "5509",
+        "quantity": 900,
+        "unitRate": 132.0,
+        "amount": 118800.0
+      }
+    ],
+    "taxableValue": 118800.0,
+    "taxRatePercent": 12,
+    "igst": 14256.0,
+    "cgst": 0.0,
+    "sgst": 0.0,
+    "total": 133056.0,
+    "confidence": 0.95
+  },
+  {
+    "fileName": "INV10.pdf",
+    "supplierName": "Surat Textile Mills Ltd",
+    "supplierGstin": "24AABCS7743R1ZQ",
+    "buyerGstin": "27AAFCS6254K1ZY",
+    "invoiceNumber": "STM/2627/1180",
+    "invoiceDate": "2026-09-05",
+    "lines": [
+      {
+        "description": "Cotton fabric 40s",
+        "hsn": "5208",
+        "quantity": 1200,
+        "unitRate": 96.0,
+        "amount": 115200.0
+      }
+    ],
+    "taxableValue": 115200.0,
+    "taxRatePercent": 5,
+    "igst": 5760.0,
+    "cgst": 0.0,
+    "sgst": 0.0,
+    "total": 120960.0,
+    "confidence": 0.95
+  }
+]

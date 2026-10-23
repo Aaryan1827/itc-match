@@ -1,0 +1,141 @@
+{
+  "period": "092026",
+  "buyerGstin": "27AAFCS6254K1ZY",
+  "expectedItcAtRiskInr": 10674.0,
+  "invoiceCount": 10,
+  "invoices": [
+    {
+      "file": "invoices/INV01.pdf",
+      "id": "INV01",
+      "supplierGstinOnInvoice": "27AAKPK4821M1ZD",
+      "invoiceNumber": "KPW/26/0412",
+      "invoiceDate": "2026-09-03",
+      "taxableValue": 17000.0,
+      "totalTaxOnInvoice": 3060.0,
+      "invoiceTotal": 20060.0,
+      "plantedIssue": null,
+      "expectedStatus": "clean",
+      "taxAtStake": 3060.0
+    },
+    {
+      "file": "invoices/INV02.pdf",
+      "id": "INV02",
+      "supplierGstinOnInvoice": "24AABCS7743R1ZQ",
+      "invoiceNumber": "STM/2627/1180",
+      "invoiceDate": "2026-09-05",
+      "taxableValue": 115200.0,
+      "totalTaxOnInvoice": 5760.0,
+      "invoiceTotal": 120960.0,
+      "plantedIssue": null,
+      "expectedStatus": "clean",
+      "taxAtStake": 5760.0
+    },
+    {
+      "file": "invoices/INV03.pdf",
+      "id": "INV03",
+      "supplierGstinOnInvoice": "29AAACP3391D1ZH",
+      "invoiceNumber": "PPT-0932",
+      "invoiceDate": "2026-09-07",
+      "taxableValue": 71500.0,
+      "totalTaxOnInvoice": 12870.0,
+      "invoiceTotal": 84370.0,
+      "plantedIssue": null,
+      "expectedStatus": "clean",
+      "taxAtStake": 12870.0
+    },
+    {
+      "file": "invoices/INV04.pdf",
+      "id": "INV04",
+      "supplierGstinOnInvoice": "27AAHFN9027B1ZD",
+      "invoiceNumber": "NAS/0457",
+      "invoiceDate": "2026-09-09",
+      "taxableValue": 39000.0,
+      "totalTaxOnInvoice": 1950.0,
+      "invoiceTotal": 40950.0,
+      "plantedIssue": "TAX_TYPE_MISMATCH",
+      "expectedStatus": "fixable",
+      "taxAtStake": 1950.0
+    },
+    {
+      "file": "invoices/INV05.pdf",
+      "id": "INV05",
+      "supplierGstinOnInvoice": "33AAECC5518H1ZW",
+      "invoiceNumber": "CPI/26-27/2210",
+      "invoiceDate": "2026-09-11",
+      "taxableValue": 94400.0,
+      "totalTaxOnInvoice": 16542.0,
+      "invoiceTotal": 111392.0,
+      "plantedIssue": "ARITHMETIC_MISMATCH",
+      "expectedStatus": "fixable",
+      "taxAtStake": 16992.0
+    },
+    {
+      "file": "invoices/INV06.pdf",
+      "id": "INV06",
+      "supplierGstinOnInvoice": "29AAACP3391D1ZA",
+      "invoiceNumber": "PPT-0951",
+      "invoiceDate": "2026-09-12",
+      "taxableValue": 34600.0,
+      "totalTaxOnInvoice": 6228.0,
+      "invoiceTotal": 40828.0,
+      "plantedIssue": "GSTIN_CHECKSUM",
+      "expectedStatus": "itc_at_risk",
+      "taxAtStake": 6228.0
+    },
+    {
+      "file": "invoices/INV07.pdf",
+      "id": "INV07",
+      "supplierGstinOnInvoice": "27AAKPK4821M1ZD",
+      "invoiceNumber": "KPW/26/0433",
+      "invoiceDate": "2026-09-14",
+      "taxableValue": 24700.0,
+      "totalTaxOnInvoice": 4446.0,
+      "invoiceTotal": 29146.0,
+      "plantedIssue": "NOT_IN_2B",
+      "expectedStatus": "itc_at_risk",
+      "taxAtStake": 4446.0
+    },
+    {
+      "file": "invoices/INV08.pdf",
+      "id": "INV08",
+      "supplierGstinOnInvoice": "33AAECC5518H1ZW",
+      "invoiceNumber": "TS/2026/0148",
+      "invoiceDate": "2026-09-16",
+      "taxableValue": 73500.0,
+      "totalTaxOnInvoice": 13230.0,
+      "invoiceTotal": 86730.0,
+      "plantedIssue": "FUZZY_MATCH",
+      "expectedStatus": "fixable",
+      "taxAtStake": 13230.0
+    },
+    {
+      "file": "invoices/INV09.pdf",
+      "id": "INV09",
+      "supplierGstinOnInvoice": "24AABCS7743R1ZQ",
+      "invoiceNumber": "STM/2627/1203",
+      "invoiceDate": "2026-09-18",
+      "taxableValue": 118800.0,
+      "totalTaxOnInvoice": 14256.0,
+      "invoiceTotal": 133056.0,
+      "plantedIssue": "RATE_NOT_ALLOWED",
+      "expectedStatus": "needs_review",
+      "taxAtStake": 14256.0
+    },
+    {
+      "file": "invoices/INV10.pdf",
+      "id": "INV10",
+      "supplierGstinOnInvoice": "24AABCS7743R1ZQ",
+      "invoiceNumber": "STM/2627/1180",
+      "invoiceDate": "2026-09-05",
+      "taxableValue": 115200.0,
+      "totalTaxOnInvoice": 5760.0,
+      "invoiceTotal": 120960.0,
+      "plantedIssue": "DUPLICATE_INVOICE",
+      "expectedStatus": "needs_review",
+      "taxAtStake": 5760.0
+    }
+  ],
+  "gstr2bOnlyEntries": [
+    "CPI/26-27/2299"
+  ]
+}
