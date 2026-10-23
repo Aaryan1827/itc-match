@@ -205,9 +205,9 @@ describe("POST /api/reconcile (end to end, Gemini mocked)", () => {
 });
 
 describe("readConfig", () => {
-  it("picks up the API key from GEMINI_API_KEY when LOVABLE_API_KEY is absent", () => {
-    const config = readConfig({ GEMINI_API_KEY: "gk-test" });
-    assert.equal(config.apiKey, "gk-test");
+  it("picks up the API key from LOVABLE_API_KEY", () => {
+    const config = readConfig({ LOVABLE_API_KEY: "sk_test-key" });
+    assert.equal(config.apiKey, "sk_test-key");
   });
 
   it("returns apiKey undefined (and the handler returns 503) when neither key is set", () => {
