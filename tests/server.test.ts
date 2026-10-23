@@ -17,19 +17,22 @@ const truth = JSON.parse(read("../samples/ground-truth.json")) as {
 };
 
 const PDF_HEADER = "%PDF-1.4\n";
-const env = { GEMINI_API_KEY: "test-key", GEMINI_MODEL: "test-model", RATE_LIMIT_PER_MIN: "100" };
+const env = { LOVABLE_API_KEY: "test-key", GEMINI_MODEL: "test-model", RATE_LIMIT_PER_MIN: "100" };
 
-/** Mock Gemini: the fake PDF body carries an invoice id, so the mock can answer per document. */
+/**
+ * Mock AI gateway (OpenAI-compatible chat completions): the fake PDF body carries
+ * an invoice id, so the mock can answer per document.
+ */
 function mockGemini(options: { failExplain?: boolean; failId?: string } = {}) {
   return async (_url: string | URL | Request, init?: RequestInit): Promise<Response> => {
     const body = JSON.parse(String(init?.body)) as {
-      contents: { parts: { inlineData?: { data: string }; text?: string }[] }[];
+      messages: { content: unknown }[];
     };
-    const inline = body.contents[0]?.parts.find((p) => p.inlineData)?.inlineData;
+    const imageUrl = /"url"\s*:\s*"data:[^"]*;base64,([^"]+)"/.exec(JSON.stringify(body.messages))?.[1];
     const reply = (payload: unknown): Response =>
-      new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify(payload) }] } }] }));
-    if (inline) {
-      const id = /INV\d\d/.exec(atob(inline.data))?.[0] ?? "";
+      new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(payload) } }] }));
+    if (imageUrl) {
+      const id = /INV\d\d/.exec(atob(imageUrl))?.[0] ?? "";
       if (id === options.failId) return new Response("boom", { status: 500 });
       const { fileName: _ignored, ...rest } = fixtures.find((f) => f.fileName === `${id}.pdf`) as ExtractedInvoice;
       return reply(rest);
@@ -140,8 +143,24 @@ describe("POST /api/reconcile (end to end, Gemini mocked)", () => {
 
   it("fails closed when the API key is missing, without leaking details", async () => {
     const res = await handleReconcile(buildRequest(allInvoices), {}, { fetch: mockGemini() as typeof fetch });
-    assert.equal(res.status, 500);
-    assert.deepEqual(await res.json(), { error: "The service is not configured." });
+    assert.equal(res.status, 503);
+    assert.deepEqual(await res.json(), { error: "The service is not configured. Please try again later." });
+  });
+
+  it("surfaces provider-level failures with the provider's safe message", async () => {
+    const res = await handleReconcile(
+      buildRequest(allInvoices),
+      env,
+      {
+        fetch: (async () =>
+          new Response(JSON.stringify({ error: { message: "Insufficient AI credits." } }), {
+            status: 402,
+            headers: { "content-type": "application/json" },
+          })) as unknown as typeof fetch,
+      },
+    );
+    assert.equal(res.status, 402);
+    assert.deepEqual(await res.json(), { error: "Insufficient AI credits." });
   });
 
   it("rate limits repeated callers", async () => {
