@@ -120,3 +120,44 @@
     }
   }
 }
+
+@media print {
+  @page {
+    margin: 1.5cm;
+    size: A4 portrait;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+    font-family: var(--font-sans), system-ui, -apple-system, sans-serif !important;
+    font-size: 10pt !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Hide app chrome, upload areas, interactive buttons, and language selector */
+  header,
+  section[aria-labelledby="upload-heading"],
+  div[class*="items-center justify-center gap-3"],
+  button,
+  select,
+  aside[role="dialog"],
+  .no-print,
+  [data-print-hide="true"] {
+    display: none !important;
+  }
+
+  /* Avoid breaking table rows, cards across pages */
+  tr,
+  tbody tr,
+  .print-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Status badges: print background colors with text labels clearly visible */
+  span[class*="border-"] {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

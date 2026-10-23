@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { CheckCircle2, CircleDashed, Loader2, SearchCheck, Sparkles } from "lucide-react";
 
@@ -8,6 +8,20 @@ import { SummaryCards } from "@/components/SummaryCards";
 import { ResultsTable } from "@/components/ResultsTable";
 import { DetailPanel } from "@/components/DetailPanel";
 import { PerformanceStrip } from "@/components/PerformanceStrip";
+import { ExportControls } from "@/components/ExportControls";
+import { SupplierTracking } from "@/components/SupplierTracking";
+import { PrintReport } from "@/components/PrintReport";
+import {
+  clearHistoryStorage,
+  findRepeatOffenders,
+  groupInvoicesBySupplier,
+  loadHistory,
+  mergeRunHistory,
+  saveHistory,
+  sortSuppliersByRisk,
+  toCompactSupplierRecords,
+} from "@/lib/suppliers/grouping";
+import type { SavedRun } from "@/lib/suppliers/types";
 import type { Language, ReconcileResponse } from "@/lib/gst/types";
 
 const STEPS = ["Extracting", "Validating", "Matching", "Classifying"] as const;
@@ -68,6 +82,27 @@ function Index() {
   const [demoLoading, setDemoLoading] = useState(false);
   const [response, setResponse] = useState<ReconcileResponse | null>(null);
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+  const [history, setHistory] = useState<SavedRun[]>([]);
+
+  useEffect(() => {
+    setHistory(loadHistory());
+  }, []);
+
+  function handleClearHistory() {
+    clearHistoryStorage();
+    setHistory([]);
+  }
+
+  const supplierGroups = useMemo(() => {
+    if (!response) return [];
+    return sortSuppliersByRisk(
+      groupInvoicesBySupplier(response.summary.results, response.followUps),
+    );
+  }, [response]);
+
+  const repeatOffenders = useMemo(() => {
+    return findRepeatOffenders(history);
+  }, [history]);
 
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -190,6 +225,22 @@ function Index() {
       window.clearInterval(stepTimer);
       setResponse(data);
       setStage("done");
+
+      try {
+        const groups = groupInvoicesBySupplier(data.summary.results, data.followUps);
+        const compact = toCompactSupplierRecords(groups);
+        const newRun: SavedRun = {
+          runDate: new Date().toISOString(),
+          suppliers: compact,
+        };
+        setHistory((prev) => {
+          const updated = mergeRunHistory(prev, newRun);
+          saveHistory(updated);
+          return updated;
+        });
+      } catch (err) {
+        console.error("Failed to update history:", err);
+      }
 
       const issues = data.summary.results.reduce((total, result) => total + result.issues.length, 0);
       const checked = data.summary.results.length;
@@ -365,11 +416,13 @@ function Index() {
         <div ref={resultsRef} className="scroll-mt-6">
           {stage === "done" && response && (
             <>
-              <SummaryCards summary={response.summary} />
+              <div className="print:hidden">
+                <SummaryCards summary={response.summary} />
+              </div>
 
               <section
                 aria-labelledby="narrative-heading"
-                className="mt-8 rounded-2xl border border-border bg-card p-5 shadow-sm"
+                className="mt-8 rounded-2xl border border-border bg-card p-5 shadow-sm print:hidden"
               >
                 <h2
                   id="narrative-heading"
@@ -381,10 +434,26 @@ function Index() {
                 <p className="mt-2 text-sm leading-relaxed text-foreground">{response.narrative}</p>
               </section>
 
-              <section aria-labelledby="table-heading" className="mt-8">
-                <h2 id="table-heading" className="mb-3 text-xl font-semibold tracking-tight">
-                  Invoice results
-                </h2>
+              {/* Part B: Suppliers to chase, Repeat offenders, & LocalStorage history */}
+              <div className="print:hidden">
+                <SupplierTracking
+                  groups={supplierGroups}
+                  repeatOffenders={repeatOffenders}
+                  hasHistory={history.length > 0}
+                  lang={lang}
+                  onClearHistory={handleClearHistory}
+                  onAnnounce={setLiveMessage}
+                />
+              </div>
+
+              <section aria-labelledby="table-heading" className="mt-8 print:hidden">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <h2 id="table-heading" className="text-xl font-semibold tracking-tight">
+                    Invoice results
+                  </h2>
+                  {/* Part A: Export controls */}
+                  <ExportControls response={response} lang={lang} onAnnounce={setLiveMessage} />
+                </div>
                 <ResultsTable invoices={response.summary.results} onSelect={setSelectedFileName} />
                 <p className="mt-2 text-xs text-muted-foreground">
                   Select a row to see its issues and a ready-to-copy supplier follow-up message.
@@ -394,7 +463,7 @@ function Index() {
               {response.failed.length > 0 && (
                 <section
                   aria-labelledby="failed-heading"
-                  className="mt-6 rounded-2xl border border-warning/30 bg-warning/10 p-5"
+                  className="mt-6 rounded-2xl border border-warning/30 bg-warning/10 p-5 print:hidden"
                 >
                   <h2 id="failed-heading" className="text-base font-semibold text-warning">
                     Could not read ({response.failed.length} file{response.failed.length === 1 ? "" : "s"})
@@ -410,13 +479,20 @@ function Index() {
                 </section>
               )}
 
-              <div className="mt-6">
+              <div className="mt-6 print:hidden">
                 <PerformanceStrip
                   timingsMs={response.timingsMs}
                   model={response.model}
                   invoiceCount={response.summary.results.length}
                 />
               </div>
+
+              {/* Part A: Accountant-friendly printable report */}
+              <PrintReport
+                response={response}
+                supplierGroups={supplierGroups}
+                lang={lang}
+              />
             </>
           )}
         </div>
