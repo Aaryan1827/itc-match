@@ -8,7 +8,6 @@ interface UploadPanelProps {
   accept: string;
   multiple?: boolean;
   isDemo: boolean;
-  demoFiles: string[];
   selectedFiles: string[];
   error: string | null;
   onSelect: (files: File[]) => void;
@@ -22,13 +21,10 @@ export function UploadPanel({
   accept,
   multiple = false,
   isDemo,
-  demoFiles,
   selectedFiles,
   error,
   onSelect,
 }: UploadPanelProps) {
-  const shownFiles = isDemo ? demoFiles : selectedFiles;
-
   return (
     <section className="rounded-2xl border border-border bg-card p-5 shadow-sm" aria-labelledby={`${id}-title`}>
       <div className="flex items-start justify-between gap-3">
@@ -68,14 +64,14 @@ export function UploadPanel({
         </p>
       )}
 
-      {shownFiles.length > 0 && (
+      {selectedFiles.length > 0 && (
         <>
           <p className="mt-4 text-xs font-medium text-muted-foreground">
             {isDemo ? "Demo data loaded:" : "Selected files:"}
           </p>
           <ul className="mt-1 space-y-1">
-            {shownFiles.map((file) => (
-              <li key={file} className="flex items-center gap-2 text-xs text-muted-foreground">
+            {selectedFiles.map((file, index) => (
+              <li key={`${file}-${index}`} className="flex items-center gap-2 text-xs text-muted-foreground">
                 <FileCheck2 aria-hidden className="size-3.5 shrink-0 text-success" />
                 <span className="truncate">{file}</span>
               </li>
