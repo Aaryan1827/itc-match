@@ -120,7 +120,7 @@ export async function handleReconcile(
     } catch (error) {
       if (error instanceof GatewayError) {
         // Account, credit or access problem: stop the whole batch with the provider's safe message.
-        gatewayError = error;
+        gatewayErrors.push(error);
         return null;
       }
       console.error("extraction failed", error instanceof Error ? error.message : "unknown");
@@ -130,7 +130,7 @@ export async function handleReconcile(
   });
   const invoices = extracted.filter((inv): inv is ExtractedInvoice => inv !== null);
   const extractMs = now() - extractStart;
-  if (gatewayError) return fail(gatewayError.status, gatewayError.message);
+  if (gatewayErrors.length > 0) return fail(gatewayErrors[0].status, gatewayErrors[0].message);
   if (invoices.length === 0) return json({ error: "No invoice could be read.", failed }, 422);
 
   // 2. Reconciliation: pure code, no model involved
