@@ -28,7 +28,7 @@ function mockGemini(options: { failExplain?: boolean; failId?: string } = {}) {
     const body = JSON.parse(String(init?.body)) as {
       messages: { content: unknown }[];
     };
-    const imageUrl = /"url"\s*:\s*"data:[^"]*;base64,([^"]+)"/.exec(JSON.stringify(body.messages))?.[1];
+    const imageUrl = /"file_data"\s*:\s*"data:[^"]*;base64,([^"]+)"/.exec(JSON.stringify(body.messages))?.[1];
     const reply = (payload: unknown): Response =>
       new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(payload) } }] }));
     if (imageUrl) {

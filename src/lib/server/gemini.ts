@@ -1,4 +1,4 @@
-import { APICallError, generateObject, type ModelMessage } from "ai";
+import { APICallError, generateText, Output, type ModelMessage } from "ai";
 import type { z } from "zod";
 
 import { explanationSchema, modelInvoiceSchema } from "../gst/schemas";
@@ -68,15 +68,16 @@ async function callModel<T>({ apiKey, model, system, messages, schema, deps }: C
     fetch: deps.fetch,
   });
   try {
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: provider(model),
-      schema,
+      output: Output.object({ schema }),
       system,
       messages,
       temperature: 0,
+      maxRetries: 0,
       abortSignal: AbortSignal.timeout(TIMEOUT_MS),
     });
-    return object;
+    return output;
   } catch (error) {
     const gatewayError = toGatewayError(error);
     if (gatewayError) throw gatewayError;
@@ -94,7 +95,7 @@ export async function extractInvoice(creds: ModelCreds, mimeType: string, base64
       {
         role: "user",
         content: [
-          { type: "image", image: `data:${mimeType};base64,${base64}` },
+          { type: "file", data: base64, mediaType: mimeType },
           { type: "text", text: "Extract the invoice fields as JSON." },
         ],
       },
