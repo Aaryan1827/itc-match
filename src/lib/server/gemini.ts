@@ -88,7 +88,7 @@ const looseExplanationSchema = z.object({
 const nonNegative = (value: number): number => (Number.isFinite(value) ? Math.max(0, value) : 0);
 
 /** Clamp model output into the range the strict schemas accept, then validate strictly. */
-function toStrictInvoice(raw: z.infer<typeof looseInvoiceSchema>): ExtractedInvoice {
+function toStrictInvoice(raw: z.infer<typeof looseInvoiceSchema>): z.infer<typeof modelInvoiceSchema> {
   const candidate = {
     ...raw,
     lines: raw.lines.map((line) => ({ ...line, quantity: nonNegative(line.quantity) })),
