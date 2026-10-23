@@ -1,4 +1,5 @@
-import { APICallError, generateObject } from "ai";
+import { APICallError, generateObject, type ModelMessage } from "ai";
+import type { z } from "zod";
 
 import { explanationSchema, modelInvoiceSchema } from "../gst/schemas";
 import type { InvoiceResult, Language } from "../gst/types";
@@ -51,24 +52,24 @@ function toGatewayError(error: unknown): GatewayError | null {
   return new GatewayError(status, message);
 }
 
-interface CallArgs<TSchema extends Parameters<typeof generateObject>[0]["schema"]> {
+interface CallArgs<T> {
   apiKey: string;
   model: string;
   system: string;
-  messages: Parameters<typeof generateObject>[0]["messages"];
-  schema: TSchema;
+  messages: ModelMessage[];
+  schema: z.ZodType<T>;
   deps: GeminiDeps;
 }
 
 /** One structured-output call through the built-in AI route. Errors carry no request content. */
-async function callModel({ apiKey, model, system, messages, schema, deps }: CallArgs<never>): Promise<unknown> {
+async function callModel<T>({ apiKey, model, system, messages, schema, deps }: CallArgs<T>): Promise<T> {
   const provider = createLovableAiGatewayProvider(apiKey, undefined, {
     baseURL: LOVABLE_GATEWAY_BASE_URL,
     fetch: deps.fetch,
   });
   try {
     const { object } = await generateObject({
-      model: provider.chat(model),
+      model: provider(model),
       schema,
       system,
       messages,
@@ -98,7 +99,7 @@ export async function extractInvoice(creds: ModelCreds, mimeType: string, base64
         ],
       },
     ],
-  }) as Promise<ReturnType<typeof modelInvoiceSchema.parse>>;
+  });
 }
 
 /** Plain-language summary and supplier messages, written from already-computed findings. */
@@ -132,5 +133,5 @@ export async function explainFindings(
         ],
       },
     ],
-  }) as Promise<ReturnType<typeof explanationSchema.parse>>;
+  });
 }

@@ -97,7 +97,7 @@ export async function handleReconcile(
   const lang = parseLanguage(form.get("lang"));
   const creds = { apiKey: config.apiKey, model: config.model, deps };
   const failed: ReconcileResponse["failed"] = [];
-  let gatewayError: GatewayError | null = null;
+  const gatewayErrors: GatewayError[] = [];
 
   // 1. Extraction (vision model), a few files at a time
   const extractStart = now();
