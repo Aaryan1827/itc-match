@@ -15,7 +15,7 @@ const toInt = (raw: string | undefined, fallback: number, min: number, max: numb
 
 export function readConfig(env: Record<string, string | undefined>): ServerConfig {
   return {
-    apiKey: env["LOVABLE_API_KEY"],
+    apiKey: env["LOVABLE_API_KEY"] ?? env["GEMINI_API_KEY"],
     model: env["GEMINI_MODEL"]?.trim() || "google/gemini-3.8-flash",
     maxFiles: toInt(env["MAX_FILES"], 10, 1, 10),
     maxFileBytes: toInt(env["MAX_FILE_MB"], 5, 1, 10) * 1024 * 1024,

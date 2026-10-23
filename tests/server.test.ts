@@ -4,6 +4,7 @@ import { describe, it } from "vitest";
 
 import { handleReconcile } from "../src/lib/server/handler";
 import { gstr2bRowsFromCsv, parseCsv, toIsoDate } from "../src/lib/server/csv";
+import { readConfig } from "../src/lib/server/config";
 import { FixedWindowLimiter } from "../src/lib/server/rate-limit";
 import { checkInvoiceFile, safeFileName, sniffKind } from "../src/lib/server/upload";
 import type { ExtractedInvoice, ReconcileResponse } from "../src/lib/gst/types";
@@ -200,5 +201,17 @@ describe("POST /api/reconcile (end to end, Gemini mocked)", () => {
     await handleReconcile(make(), tight, { fetch: mockGemini() as typeof fetch });
     const second = await handleReconcile(make(), tight, { fetch: mockGemini() as typeof fetch });
     assert.equal(second.status, 429);
+  });
+});
+
+describe("readConfig", () => {
+  it("picks up the API key from GEMINI_API_KEY when LOVABLE_API_KEY is absent", () => {
+    const config = readConfig({ GEMINI_API_KEY: "gk-test" });
+    assert.equal(config.apiKey, "gk-test");
+  });
+
+  it("returns apiKey undefined (and the handler returns 503) when neither key is set", () => {
+    const config = readConfig({});
+    assert.equal(config.apiKey, undefined);
   });
 });
