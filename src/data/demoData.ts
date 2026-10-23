@@ -1,5 +1,22 @@
 export type InvoiceStatus = "Clean" | "Fixable" | "ITC at risk" | "Needs review";
 
+/** ₹ formatting with Indian digit grouping, e.g. ₹1,84,500. */
+export const inr = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
+
+/** Deterministic "12 Sep 2026" formatting, safe for SSR and hydration. */
+export function formatIndianDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const months = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  ];
+  return `${day} ${months[month - 1]} ${year}`;
+}
+
 export interface FailedCheck {
   check: string;
   explanation: string;
