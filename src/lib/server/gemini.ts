@@ -104,7 +104,10 @@ interface CallArgs<T> {
 
 /** POST to Gemini generateContent and return the parsed, schema-validated JSON output. */
 async function callModel<T>({ apiKey, model, system, parts, schema, deps }: CallArgs<T>): Promise<T> {
-  const cleanModel = (model || "gemini-2.5-flash").replace(/^models\//, "").replace(/^google\//, "");
+  let cleanModel = (model || "gemini-3.8-flash").replace(/^models\//, "").replace(/^google\//, "");
+  if (cleanModel === "gemini-2.5-flash") {
+    cleanModel = "gemini-3.8-flash";
+  }
   const url = `${GEMINI_BASE}/${encodeURIComponent(cleanModel)}:generateContent`;
 
   const body = JSON.stringify({
