@@ -1,9 +1,14 @@
-/**
- * Fixed-window, in-memory rate limiter. Best effort on serverless platforms:
+/** Fixed-window, in-memory rate limiter. Best effort on serverless platforms:
  * each warm instance keeps its own counters, which still blunts bursts and abuse.
  */
 export class FixedWindowLimiter {
   private readonly hits = new Map<string, { count: number; resetAt: number }>();
+
+  /**
+   * Minimum number of tracked IPs before the eviction pass runs.
+   * Keeps memory bounded in long-lived processes while avoiding per-request overhead.
+   */
+  private static readonly EVICTION_THRESHOLD = 1000;
 
   constructor(
     private readonly limit: number,
@@ -24,7 +29,7 @@ export class FixedWindowLimiter {
   }
 
   private evictExpired(time: number): void {
-    if (this.hits.size < 1000) return;
+    if (this.hits.size < FixedWindowLimiter.EVICTION_THRESHOLD) return;
     for (const [key, entry] of this.hits) {
       if (entry.resetAt <= time) this.hits.delete(key);
     }
