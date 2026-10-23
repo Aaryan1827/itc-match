@@ -28,9 +28,7 @@ function mockGemini(options: { failExplain?: boolean; failId?: string } = {}) {
     const body = JSON.parse(String(init?.body)) as {
       messages: { content: unknown }[];
     };
-    const raw = JSON.stringify(body.messages);
-    const imageUrl = /"file_data"\s*:\s*"data:[^"]*;base64,([^"]+)"/.exec(raw)?.[1];
-    if (process.env.DBG) console.log("DBG capture:", imageUrl?.slice(0, 24), JSON.stringify(raw).slice(0, 200));
+    const imageUrl = /"file_data"\s*:\s*"data:[^"]*;base64,([^"]+)"/.exec(JSON.stringify(body.messages))?.[1];
     const reply = (payload: unknown): Response =>
       new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(payload) } }] }));
     if (imageUrl) {
@@ -44,11 +42,38 @@ function mockGemini(options: { failExplain?: boolean; failId?: string } = {}) {
   };
 }
 
+/**
+ * Multipart body built by hand: the jsdom File implementation loses its file
+ * name when a jsdom FormData is consumed by Node's Request, so form entries
+ * would arrive as "blob:..." names instead of the real file names.
+ */
 function buildRequest(files: { name: string; content: string }[], csv: string | null = csvText): Request {
-  const form = new FormData();
-  for (const f of files) form.append("invoices", new File([f.content], f.name, { type: "application/pdf" }));
-  if (csv !== null) form.append("gstr2b", new File([csv], "gstr2b.csv", { type: "text/csv" }));
-  return new Request("http://localhost/api/reconcile", { method: "POST", body: form });
+  const boundary = "testboundary7f3a";
+  const encoder = new TextEncoder();
+  const chunks: Uint8Array[] = [];
+  for (const f of files) {
+    chunks.push(
+      encoder.encode(
+        `--${boundary}\r\nContent-Disposition: form-data; name="invoices"; filename="${f.name}"\r\n` +
+          `Content-Type: application/pdf\r\n\r\n`,
+      ),
+      encoder.encode(f.content),
+      encoder.encode("\r\n"),
+    );
+  }
+  if (csv !== null) {
+    chunks.push(
+      encoder.encode(
+        `--${boundary}\r\nContent-Disposition: form-data; name="gstr2b"; filename="gstr2b.csv"\r\n` +
+          `Content-Type: text/csv\r\n\r\n`,
+      ),
+      encoder.encode(csv),
+      encoder.encode("\r\n"),
+    );
+  }
+  chunks.push(encoder.encode(`--${boundary}--\r\n`));
+  const body = new Blob(chunks, { type: `multipart/form-data; boundary=${boundary}` });
+  return new Request("http://localhost/api/reconcile", { method: "POST", body });
 }
 
 const allInvoices = fixtures.map((f) => ({ name: f.fileName, content: `${PDF_HEADER}%${f.fileName.replace(".pdf", "")}` }));
