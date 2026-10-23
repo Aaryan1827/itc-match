@@ -130,7 +130,8 @@ export async function handleReconcile(
   });
   const invoices = extracted.filter((inv): inv is ExtractedInvoice => inv !== null);
   const extractMs = now() - extractStart;
-  if (gatewayErrors.length > 0) return fail(gatewayErrors[0].status, gatewayErrors[0].message);
+  const gatewayError = gatewayErrors[0];
+  if (gatewayError) return fail(gatewayError.status, gatewayError.message);
   if (invoices.length === 0) return json({ error: "No invoice could be read.", failed }, 422);
 
   // 2. Reconciliation: pure code, no model involved
