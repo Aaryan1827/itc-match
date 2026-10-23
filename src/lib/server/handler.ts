@@ -24,7 +24,6 @@ const fail = (status: number, error: string, extra?: Record<string, string>): Re
 const parseLanguage = (value: FormDataEntryValue | null): Language =>
   value === "hi" || value === "mr" ? value : "en";
 
-/** Maximum number of invoice extraction requests to run concurrently. */
 const CONCURRENCY = 4;
 const EXTRACT_ERROR = "This document could not be read. Try a clearer scan or photo.";
 
@@ -65,9 +64,7 @@ export async function handleReconcile(
   if (!config.apiKey) return fail(503, "The service is not configured. Please try again later.");
 
   if (limiter?.limit !== config.rateLimitPerMin) {
-    /** Fixed-window duration in milliseconds: one minute. */
-    const WINDOW_MS = 60_000;
-    limiter = { limit: config.rateLimitPerMin, instance: new FixedWindowLimiter(config.rateLimitPerMin, WINDOW_MS) };
+    limiter = { limit: config.rateLimitPerMin, instance: new FixedWindowLimiter(config.rateLimitPerMin, 60_000) };
   }
   if (!limiter.instance.allow(clientIp(request))) {
     return fail(429, "Too many requests. Please wait a minute and try again.", { "Retry-After": "60" });

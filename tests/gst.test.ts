@@ -4,7 +4,7 @@ import { describe, it } from "vitest";
 
 import { rateConfig, stateCodes } from "../src/lib/gst/config";
 import { gstinCheckChar, validateGstin } from "../src/lib/gst/gstin";
-import { Gstr2bIndex, normalizeInvoiceNumber } from "../src/lib/gst/matcher";
+import { normalizeInvoiceNumber } from "../src/lib/gst/matcher";
 import { reconcile } from "../src/lib/gst/reconcile";
 import { allowedRatesOn, checkArithmetic, checkRate, checkTaxType } from "../src/lib/gst/rules";
 import type { ExtractedInvoice, Gstr2bRow } from "../src/lib/gst/types";
@@ -101,56 +101,3 @@ describe("benchmark on synthetic data", () => {
     assert.deepEqual(summary.unmatchedGstr2b.map((r) => r.invoiceNumber), truth.gstr2bOnlyEntries);
   });
 });
-
-describe("Gstr2bIndex performance with 5000 rows and 10 invoices", () => {
-  it("reconciles correctly and quickly", () => {
-    const GSTIN_A = "27AAKPK4821M1ZD";
-    const GSTIN_B = "07AAACR5055K1Z5";
-
-    // Build 5000 GSTR-2B rows; the first 10 will match the invoices below.
-    const rows: import("../src/lib/gst/types").Gstr2bRow[] = Array.from({ length: 5000 }, (_, i) => ({
-      supplierGstin: i < 5 ? GSTIN_A : GSTIN_B,
-      supplierName: "Supplier",
-      invoiceNumber: `INV-PERF-${i + 1}`,
-      invoiceDate: "2025-06-01",
-      taxableValue: 1000 + i,
-      igst: 180,
-      cgst: 0,
-      sgst: 0,
-      invoiceValue: 1180 + i,
-    }));
-
-    // 10 invoices: exact matches for rows 0–4, normalized matches for rows 5–9.
-    const invoices: import("../src/lib/gst/types").ExtractedInvoice[] = Array.from({ length: 10 }, (_, i) => ({
-      fileName: `perf-${i}.pdf`,
-      supplierName: "Supplier",
-      supplierGstin: i < 5 ? GSTIN_A : GSTIN_B,
-      buyerGstin: "29GGGGG1314R9Z6",
-      invoiceNumber: i < 5 ? `INV-PERF-${i + 1}` : `inv/perf/${i + 1}`, // normalized match for i>=5
-      invoiceDate: "2025-06-01",
-      lines: [],
-      taxableValue: 1000 + i,
-      taxRatePercent: 18,
-      igst: 180,
-      cgst: 0,
-      sgst: 0,
-      total: 1180 + i,
-      confidence: 0.95,
-    }));
-
-    const start = Date.now();
-    const index = new Gstr2bIndex(rows);
-    for (const inv of invoices) {
-      index.match(inv);
-    }
-    const elapsed = Date.now() - start;
-
-    // Must finish well under 500 ms (the Map index makes it effectively O(1) per invoice).
-    assert.ok(elapsed < 500, `reconciliation took ${elapsed}ms, expected < 500ms`);
-
-    // Verify the first 5 were claimed (exact match) and rows 5-9 by normalized match.
-    const remaining = index.unclaimed();
-    assert.equal(remaining.length, 4990, `expected 4990 unclaimed rows, got ${remaining.length}`);
-  });
-});
-

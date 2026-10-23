@@ -6,7 +6,6 @@ import type { FollowUp, InvoiceResult, Language } from "../gst/types";
 import { createLovableAiGatewayProvider, LOVABLE_GATEWAY_BASE_URL } from "./gateway";
 import { EXTRACTION_SYSTEM, explainSystem } from "./prompts";
 
-/** Maximum time to wait for a single model call before aborting. */
 const TIMEOUT_MS = 60_000;
 
 export interface GeminiDeps {

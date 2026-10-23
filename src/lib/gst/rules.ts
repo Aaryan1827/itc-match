@@ -74,11 +74,8 @@ export function checkRate(inv: ExtractedInvoice, config: RateConfig): Issue[] {
   return [{ code: "RATE_NOT_ALLOWED", message: `${rate}% is not a GST rate in force on ${inv.invoiceDate} (valid: ${allowed.join(", ")}%). Check the item's HSN code and ask the supplier to confirm.` }];
 }
 
-/** Minimum confidence score below which a human review is recommended. */
-const LOW_CONFIDENCE_THRESHOLD = 0.7;
-
 /** Low extraction confidence means a human should look at the document. */
-export function checkConfidence(inv: ExtractedInvoice, threshold = LOW_CONFIDENCE_THRESHOLD): Issue[] {
+export function checkConfidence(inv: ExtractedInvoice, threshold = 0.7): Issue[] {
   return inv.confidence < threshold
     ? [{ code: "LOW_CONFIDENCE", message: `The document was hard to read (confidence ${Math.round(inv.confidence * 100)}%). Please verify the extracted fields.` }]
     : [];

@@ -23,41 +23,19 @@ export class Gstr2bIndex {
   private readonly rows: Gstr2bRow[];
   private readonly claimed = new Set<Gstr2bRow>();
 
-  /** Map from exact key "GSTIN|NUMBER" to the row, for O(1) exact lookups. */
-  private readonly exactMap = new Map<string, Gstr2bRow>();
-
-  /** Map from normalized key "GSTIN|NORMALIZEDNUMBER" to the row, for O(1) normalized lookups. */
-  private readonly looseMap = new Map<string, Gstr2bRow>();
-
-  /** Map from supplier GSTIN to all rows from that supplier, for candidatesFor(). */
-  private readonly bySupplier = new Map<string, Gstr2bRow[]>();
-
   constructor(rows: Gstr2bRow[]) {
     this.rows = rows;
-    for (const r of rows) {
-      const ek = exactKey(r.supplierGstin, r.invoiceNumber);
-      if (!this.exactMap.has(ek)) this.exactMap.set(ek, r);
-
-      const lk = looseKey(r.supplierGstin, r.invoiceNumber);
-      if (!this.looseMap.has(lk)) this.looseMap.set(lk, r);
-
-      const gstin = r.supplierGstin.trim().toUpperCase();
-      const bucket = this.bySupplier.get(gstin);
-      if (bucket) bucket.push(r);
-      else this.bySupplier.set(gstin, [r]);
-    }
   }
 
   match(inv: ExtractedInvoice): MatchResult {
-    const ek = exactKey(inv.supplierGstin, inv.invoiceNumber);
-    const exactRow = this.exactMap.get(ek);
-    if (exactRow && !this.claimed.has(exactRow)) return this.claim(exactRow, "exact");
-
-    const lk = looseKey(inv.supplierGstin, inv.invoiceNumber);
-    const looseRow = this.looseMap.get(lk);
-    if (looseRow && !this.claimed.has(looseRow)) return this.claim(looseRow, "normalized");
-
-    return { kind: "none", row: null };
+    const exact = this.rows.find(
+      (r) => !this.claimed.has(r) && exactKey(r.supplierGstin, r.invoiceNumber) === exactKey(inv.supplierGstin, inv.invoiceNumber),
+    );
+    if (exact) return this.claim(exact, "exact");
+    const loose = this.rows.find(
+      (r) => !this.claimed.has(r) && looseKey(r.supplierGstin, r.invoiceNumber) === looseKey(inv.supplierGstin, inv.invoiceNumber),
+    );
+    return loose ? this.claim(loose, "normalized") : { kind: "none", row: null };
   }
 
   /**
@@ -65,11 +43,10 @@ export class Gstr2bIndex {
    * These are candidates for an LLM judgement when no deterministic match exists.
    */
   candidatesFor(inv: ExtractedInvoice): Gstr2bRow[] {
-    const gstin = inv.supplierGstin.trim().toUpperCase();
-    const bucket = this.bySupplier.get(gstin) ?? [];
-    return bucket.filter(
+    return this.rows.filter(
       (r) =>
         !this.claimed.has(r) &&
+        r.supplierGstin.trim().toUpperCase() === inv.supplierGstin.trim().toUpperCase() &&
         Math.abs(r.taxableValue - inv.taxableValue) < 1,
     );
   }
