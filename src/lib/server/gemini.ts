@@ -2,7 +2,7 @@ import { APICallError, generateText, Output, type ModelMessage } from "ai";
 import { z } from "zod";
 
 import { explanationSchema, modelInvoiceSchema } from "../gst/schemas";
-import type { ExtractedInvoice, FollowUp, InvoiceResult, Language } from "../gst/types";
+import type { FollowUp, InvoiceResult, Language } from "../gst/types";
 import { createLovableAiGatewayProvider, LOVABLE_GATEWAY_BASE_URL } from "./gateway";
 import { EXTRACTION_SYSTEM, explainSystem } from "./prompts";
 
