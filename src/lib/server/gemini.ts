@@ -138,7 +138,11 @@ async function callModel<T>({ apiKey, model, system, messages, schema, deps }: C
 }
 
 /** Vision extraction for one invoice. Output is schema-validated before it is trusted. */
-export async function extractInvoice(creds: ModelCreds, mimeType: string, base64: string): Promise<ExtractedInvoice> {
+export async function extractInvoice(
+  creds: ModelCreds,
+  mimeType: string,
+  base64: string,
+): Promise<z.infer<typeof modelInvoiceSchema>> {
   const raw = await callModel({
     ...creds,
     system: EXTRACTION_SYSTEM,
