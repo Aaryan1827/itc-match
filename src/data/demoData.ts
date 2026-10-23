@@ -10,10 +10,11 @@ export const inr = new Intl.NumberFormat("en-IN", {
 /** Deterministic "12 Sep 2026" formatting, safe for SSR and hydration. */
 export function formatIndianDate(isoDate: string): string {
   const [year, month, day] = isoDate.split("-").map(Number);
+  if (!year || !month || !day) return isoDate;
   const months = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-  ];
+  ] as const;
   return `${day} ${months[month - 1]} ${year}`;
 }
 
