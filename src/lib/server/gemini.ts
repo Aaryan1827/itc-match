@@ -141,7 +141,7 @@ async function callModel<T>({ apiKey, model, system, parts, schema, deps }: Call
     if (status === 401 || status === 402 || status === 403 || status === 404 || status === 429) {
       throw new GatewayError(status, message);
     }
-    throw new Error(`Gemini error ${status}`);
+    throw new Error(`Gemini error ${status}: ${message}`);
   }
 
   const json = (await res.json()) as {
