@@ -115,7 +115,6 @@ async function callModel<T>({ apiKey, model, system, parts, schema, deps }: Call
     contents: [{ role: "user", parts }],
     generationConfig: {
       responseMimeType: "application/json",
-      temperature: 0,
     },
   });
 
