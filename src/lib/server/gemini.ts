@@ -70,6 +70,76 @@ const looseExplanationSchema = z.object({
   followUps: z.array(z.object({ invoiceNumber: z.string(), message: z.string() })),
 });
 
+/**
+ * Schemas sent to Gemini so it returns exactly these fields (Google's OpenAPI subset).
+ * Without them, lighter models guess field names and fail validation below.
+ */
+const INVOICE_RESPONSE_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    supplierName: { type: "STRING" },
+    supplierGstin: { type: "STRING" },
+    buyerGstin: { type: "STRING" },
+    invoiceNumber: { type: "STRING" },
+    invoiceDate: { type: "STRING" },
+    lines: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: {
+          description: { type: "STRING" },
+          hsn: { type: "STRING" },
+          quantity: { type: "NUMBER" },
+          unitRate: { type: "NUMBER" },
+          amount: { type: "NUMBER" },
+        },
+        required: ["description", "hsn", "quantity", "unitRate", "amount"],
+      },
+    },
+    taxableValue: { type: "NUMBER" },
+    taxRatePercent: { type: "NUMBER", nullable: true },
+    igst: { type: "NUMBER" },
+    cgst: { type: "NUMBER" },
+    sgst: { type: "NUMBER" },
+    total: { type: "NUMBER" },
+    confidence: { type: "NUMBER" },
+  },
+  required: [
+    "supplierName",
+    "supplierGstin",
+    "buyerGstin",
+    "invoiceNumber",
+    "invoiceDate",
+    "lines",
+    "taxableValue",
+    "taxRatePercent",
+    "igst",
+    "cgst",
+    "sgst",
+    "total",
+    "confidence",
+  ],
+} as const;
+
+const EXPLANATION_RESPONSE_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    summary: { type: "STRING" },
+    followUps: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: {
+          invoiceNumber: { type: "STRING" },
+          message: { type: "STRING" },
+        },
+        required: ["invoiceNumber", "message"],
+      },
+    },
+  },
+  required: ["summary", "followUps"],
+} as const;
+
 const nonNegative = (value: number): number => (Number.isFinite(value) ? Math.max(0, value) : 0);
 
 /** Clamp model output into the range the strict schemas accept, then validate strictly. */
@@ -99,22 +169,33 @@ interface CallArgs<T> {
   system: string;
   parts: GeminiPart[];
   schema: z.ZodType<T>;
+  responseSchema: object;
   deps: GeminiDeps;
 }
 
 /** POST to Gemini generateContent and return the parsed, schema-validated JSON output. */
-async function callModel<T>({ apiKey, model, system, parts, schema, deps }: CallArgs<T>): Promise<T> {
+async function callModel<T>({
+  apiKey,
+  model,
+  system,
+  parts,
+  schema,
+  responseSchema,
+  deps,
+}: CallArgs<T>): Promise<T> {
   let cleanModel = (model || "gemini-3.8-flash").replace(/^models\//, "").replace(/^google\//, "");
   if (cleanModel === "gemini-2.5-flash") {
     cleanModel = "gemini-3.8-flash";
   }
   const url = `${GEMINI_BASE}/${encodeURIComponent(cleanModel)}:generateContent`;
 
+  // No temperature/top_p/top_k: they are deprecated on newer Gemini models.
   const body = JSON.stringify({
     systemInstruction: { parts: [{ text: system }] },
     contents: [{ role: "user", parts }],
     generationConfig: {
       responseMimeType: "application/json",
+      responseSchema,
     },
   });
 
@@ -162,6 +243,7 @@ export async function extractInvoice(
     ...creds,
     system: EXTRACTION_SYSTEM,
     schema: looseInvoiceSchema,
+    responseSchema: INVOICE_RESPONSE_SCHEMA,
     parts: [
       { inlineData: { mimeType, data: base64 } },
       { text: "Extract the invoice fields as JSON." },
@@ -190,6 +272,7 @@ export async function explainFindings(
     ...creds,
     system: explainSystem(lang),
     schema: looseExplanationSchema,
+    responseSchema: EXPLANATION_RESPONSE_SCHEMA,
     parts: [
       {
         text: `Findings (data):\n${JSON.stringify(payload, null, 2)}\n\nRespond with the JSON object described in your instructions.`,
